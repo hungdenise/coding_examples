@@ -26,7 +26,7 @@ H0 = 70.0
 omega_m = 0.27
 omega_lambda = 0.73
 
-pos = 'known_pos.txt'
+pos = 'known_pos.txt' # file of previously known structures in the fields
 pdt = np.dtype({'names':['field', 'struct_id', 'ra', 'dec', 'z1', 'z2', 'delta_prop_d', 'v', 'num_redshifts', 'radius'], 'formats':['U11',np.int,np.float,np.float,np.float,np.float,np.float,np.float,np.int,np.float]})
 post = np.loadtxt(pos,dtype=pdt)
 
@@ -39,8 +39,8 @@ pz2 = post['z2']
 
 pz = (pz1 + pz2) * 0.5
 
-spec_bandcut = 'bandcut_spec.txt'
-phot_bandcut = 'bandcut_phot.txt'
+spec_bandcut = 'bandcut_spec.txt' # file of used spectroscopic redshifts
+phot_bandcut = 'bandcut_phot.txt' # file of used photometric redshifts
 sdt = np.dtype({'names':['field', 'ra', 'dec', 'z', 'pid'], 'formats':['U10', np.float,np.float,np.float,np.int]})
 specs_cut = np.loadtxt(spec_bandcut,dtype=sdt)
 phot_cut = np.loadtxt(phot_bandcut,dtype=sdt)
@@ -74,15 +74,7 @@ for lk in links:
     phot_dec = np.deg2rad(phot_decs[fcut])
     phot_z = phot_zs[fcut]
     pid = pids[fcut]
-    
-    plt.figure(figsize=(12, 12))
-    plt.scatter(phot_ra, phot_dec, s=30, label='z-phot')
-    plt.scatter(spec_ra, spec_dec, s=30, label='z-spec')
-    plt.xlabel('RA')
-    plt.ylabel('Dec')
-    plt.legend(loc='best')
-    plt.savefig('spec_phot_' + field + '.png', bbox_inches='tight')
-    
+
     for detect in detects:
       for marea in mareas:
         f = open('regmatch/regmatch_' + field + '_d' + detect + '_a' + marea + '_db01_' + link + 'd.txt', 'r')
@@ -302,7 +294,7 @@ for lk in links:
           d_spec = d_spec * dA
           d_phot = d_phot * dA
         
-          # 2 Mpc for protoclusters
+          # get all galaxies in range; 2 Mpc for protoclusters
           gals_spec = np.where(d_spec < 2.0)
           gals_phot = np.where(d_phot < 2.0)
           
@@ -311,6 +303,7 @@ for lk in links:
           pid1 = pid[gals_phot]
           sid1 = sid[gals_spec]
           
+          # determine the spectroscopic fraction of the candidate cluster
           delta_redshift = field_err[field] * (1 + mean) # average error * (1+z)
           selects = np.where((spec_z1 > mean - delta_redshift) & (spec_z1 < mean + delta_redshift))
           selectp = np.where((phot_z1 > mean - delta_redshift) & (phot_z1 < mean + delta_redshift))
@@ -344,11 +337,6 @@ for lk in links:
           else:
             spec_frac = 0
             
-          #print(i, len(struct_z), mean)
-          #print(match_inrange, bad_phot_match, len(pid2))
-          #exit()
-          
-          #spec_frac = len(sid2) / len(pid2)
           # cut to spectral fraction limits
           if spec_frac >= 0.0:       
             if plot:
@@ -380,7 +368,7 @@ for lk in links:
               d = d * dA
               closest = np.where(d == np.min(d))[0][0]
               
-              #print(closest, d[closest], name[closest])
+              # if closest previously known structure is within 3 Mpc, label the detection a recovery
               if d[closest] < 3.0: # Mpc matching radius
                 flag = str(name[closest])
                 if plot:
@@ -388,7 +376,7 @@ for lk in links:
                   plt.title('Struct ' + flag + ', Dist: %.2f Mpc'%(d[closest]))
                 flag = 's' + flag
                 candidate = False
-            
+            # plot Gaussian fit of detection and histogram and scatter plot of nearby galaxies
             if plot:
               if flag == 'new':
                 plt.plot(points, gaus(points, *popt), color='orange', linestyle='dashed', linewidth=3, label='Fit')
@@ -449,5 +437,5 @@ for lk in links:
               plt.tight_layout(w_pad=0.4)
               plt.savefig(outfile)
               plt.close('all')
-        
+            # write candidate cluster detection to text output
             print('db01', lk, field, 'd' + str(detect) + '_a' + marea, i, len(struct_z), mean, mean_err, std, std_err, mean_ra, mean_dec, errs, gauss_area, gauss_amp, flag, spec_frac, this_edge_frac)

@@ -1,4 +1,4 @@
-## Searching for Yarkovsky in Asteroid Orbit Determination
+## Searching for the Yarkovsky Effect in Asteroid Orbits
 `make_syn_obs.py` is a Python script to create options files for generating ephemerides in OrbFit assuming a user-defined a priori A2 value 
 and then use the ephemerides to create synthetic observations of varying arc length.
 
